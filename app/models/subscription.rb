@@ -1,0 +1,4 @@
+class Subscription < ApplicationRecord
+	has_many :client_payment_subscriptions
+	has_many :account_clients, through: :client_payment_subscriptions
+end
