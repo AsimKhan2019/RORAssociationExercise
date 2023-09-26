@@ -43,7 +43,7 @@ class AccountsController < ApplicationController
         if @account.save
             @account.account_clients.create(client_id: params[:account][:account_client][:client_id])
             @account.subscription_accounts.create(subscription_id: params[:account][:subscription_account][:subscription_id])
-            # You can do something similar for subscription_account here
+            
             format.html { redirect_to account_url(@account), notice: "Account was successfully created." }
             format.json { render :show, status: :created, location: @account }
         else
@@ -68,7 +68,7 @@ class AccountsController < ApplicationController
 
             @account.subscription_accounts.destroy_all # Remove existing associations
             @account.subscription_accounts.create(subscription_id: params[:account][:subscription_account][:client_id])
-            # You can do something similar for subscription_account here
+            
             format.html { redirect_to account_url(@account), notice: "Account was successfully updated." }
             format.json { render :show, status: :created, location: @account }
         else
