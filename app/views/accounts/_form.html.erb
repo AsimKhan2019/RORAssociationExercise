@@ -22,6 +22,16 @@
   </div>
 
   <div>
+    <%= form.label :client_id, style: "display: block" %>
+    <%= form.collection_select :client_id, @clients, :id, :name %>
+  </div>
+
+  <div>
+    <%= form.label :subscription_id, style: "display: block" %>
+    <%= form.collection_select :subscription_id, @subscriptions, :id, :name %>
+  </div>
+
+  <div>
     <%= form.submit %>
   </div>
 <% end %>
