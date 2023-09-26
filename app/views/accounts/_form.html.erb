@@ -23,12 +23,16 @@
 
   <div>
     <%= form.label :client_id, style: "display: block" %>
-    <%= form.collection_select :client_id, @clients, :id, :name %>
+    <%= form.fields_for :account_client do |ac| %>
+        <%= ac.collection_select :client_id, @clients, :id, :name %>
+    <% end %>
   </div>
 
   <div>
     <%= form.label :subscription_id, style: "display: block" %>
-    <%= form.collection_select :subscription_id, @subscriptions, :id, :name %>
+    <%= form.fields_for :subscription_account do |sa| %>
+    <%= sa.collection_select :subscription_id, @subscriptions, :id, :name %>
+  <% end %>
   </div>
 
   <div>

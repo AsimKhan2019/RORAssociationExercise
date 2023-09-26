@@ -15,12 +15,19 @@ class AccountsController < ApplicationController
   # GET /accounts/new
   def new
     @account = Account.new
+    @account.account_clients.build 
+    @account.subscription_accounts.build 
     @clients = Client.all 
     @subscriptions = Subscription.all 
   end
 
   # GET /accounts/1/edit
   def edit
+    @account = Account.find(params[:id])
+    @account.account_clients.build
+    @account.subscription_accounts.build
+    @clients = Client.all
+    @subscriptions = Subscription.all
   end
 
   # POST /accounts or /accounts.json
@@ -30,24 +37,20 @@ class AccountsController < ApplicationController
 
     @account = Account.new(account_params)
     
-    #@account_client = AccountClient.new(account_id: @account.id, client_id: params[:client_id])
-    #@subscription_account = SubscriptionAccount.new(account_id: @account.id, subscription_id: params[:subscription_id])
-
-    #Account.transaction do
-    #    @account.save!
-    #    @account_client.save!
-    #    @subscription_account.save!
-    #end
-
-    #redirect_to account_url(@account)
-    
     respond_to do |format|
-      if @account.save
-        format.html { redirect_to account_url(@account), notice: "Account was successfully created." }
-        format.json { render :show, status: :created, location: @account }
-      else
-        format.html { render :new, status: :unprocessable_entity }
-        format.json { render json: @account.errors, status: :unprocessable_entity }
+      ActiveRecord::Base.transaction do
+        @account = Account.new(account_params)
+        if @account.save
+            @account.account_clients.create(client_id: params[:account][:account_client][:client_id])
+            @account.subscription_accounts.create(subscription_id: params[:account][:subscription_account][:subscription_id])
+            # You can do something similar for subscription_account here
+            format.html { redirect_to account_url(@account), notice: "Account was successfully created." }
+            format.json { render :show, status: :created, location: @account }
+        else
+            format.html { render :new, status: :unprocessable_entity }
+            format.json { render json: @account.errors, status: :unprocessable_entity }
+            raise ActiveRecord::Rollback # Rollback the transaction if there's an error
+        end
       end
     end
   end
@@ -56,17 +59,23 @@ class AccountsController < ApplicationController
   def update
     @clients = Client.all
     @subscriptions = Subscription.all
-
-    #@account_client = AccountClient.new(account_id: @account.id, client_id: params[:client_id])
-    #@subscription_account = SubscriptionAccount.new(account_id: @account.id, subscription_id: params[:subscription_id])
-
+    
     respond_to do |format|
-      if @account.update(account_params)
-        format.html { redirect_to account_url(@account), notice: "Account was successfully updated." }
-        format.json { render :show, status: :ok, location: @account }
-      else
-        format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: @account.errors, status: :unprocessable_entity }
+     ActiveRecord::Base.transaction do
+        if @account.update(account_params)
+            @account.account_clients.destroy_all # Remove existing associations
+            @account.account_clients.create(client_id: params[:account][:account_client][:client_id])
+
+            @account.subscription_accounts.destroy_all # Remove existing associations
+            @account.subscription_accounts.create(subscription_id: params[:account][:subscription_account][:client_id])
+            # You can do something similar for subscription_account here
+            format.html { redirect_to account_url(@account), notice: "Account was successfully updated." }
+            format.json { render :show, status: :created, location: @account }
+        else
+            format.html { render :new, status: :unprocessable_entity }
+            format.json { render json: @account.errors, status: :unprocessable_entity }
+            raise ActiveRecord::Rollback # Rollback the transaction if there's an error
+        end
       end
     end
   end
@@ -89,8 +98,8 @@ class AccountsController < ApplicationController
 
     # Only allow a list of trusted parameters through.
     def account_params
-      params.require(:account).permit(:name, :date, 
-      account_clients_attributes: [:id, :client_id, :account_id, :_destroy],
-      subscription_accounts_attributes: [:id, :subscription_id, :account_id, :_destroy])
+        params.require(:account).permit(:name, :date, 
+        account_clients_attributes: [:id, :client_id],
+        subscription_accounts_attributes: [:id, :subscription_id])
     end
 end
